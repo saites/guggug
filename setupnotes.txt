@@ -1,0 +1,88 @@
+Copy image file to SD card (install debian to Raspberry Pi)
+
+Get everything up to date:
+	sudo apt-get update
+	sudo apt-get upgrade
+	sudo apt-get autoremove
+	(can do 'sudo apt-get clean' to get some more space)
+
+Install/setup VIM:
+	sudo apt-get install vim
+	scp asaites@hydra14.eecs.utk.edu:.vimrc .
+	
+Install/setup zsh
+	sudo apt-get install zsh
+	scp -l asaites hydra14.eecs.utk.edu:.zsh_files .
+	scp -l asaites hydra14.eecs.utk.edu:.zshrc
+	chsh -s /bin/zsh
+	
+Install mail
+	sudo apt-get install msmtp-mta
+	sudo vi /root/.msmtprc
+		#Gmail account
+		defaults
+		logfile /root/msmtp.log
+		
+		account gmail
+		auth on
+		host smtp.gmail.com
+		from saites2001@gmail.com
+		auth on
+		tls on
+		tls_trust_file /usr/share/ca-certificates/mozilla/Equifax_Secure_CA.crt
+		user saites2001@gmail.com
+		password PASSWORD
+		port 587
+		
+		account default: gmail
+	root chmod 0600 /root/.msmtprc
+	sudo apt-get install heirloom-mailx
+	sudo vi /root/.mailrc
+		set sendmail="/usr/bin/msmtp"
+		set message-sendmail-extra-arguments="-a gmail"
+	mail -s "Subject" saites2001@gmail.com
+	
+Setup Mail Script
+	sudo vi /etc/init.d/emailip
+		#! /bin/bash
+		# /etc/init.d/emailip
+		
+		### BEGIN INIT INFO
+		# Provides:          emailip
+		# Required-Start:    $remote_fs $syslog
+		# Required-Stop:     $remote_fs $syslog
+		# Default-Start:     2 3 4 5
+		# Default-Stop:      0 1 6
+		# Short-Description: emails IP on boot
+		# Description:       sends an email to saites2001@gmail.com with the output of ifconfig
+		### END INIT INFO
+	
+		case "$1" in
+		  start)
+			/sbin/ifconfig | /usr/bin/mail -s "Raspberry Pi IP Address" saites2001@gmail.com
+			;;
+		  stop)
+			;;
+		  *)
+			echo "Usage: /etc/init.d/emailip start"
+			exit 1
+			;;
+		esac
+
+		exit 0
+	sudo chmod 0755 /etc/init.d/emailip
+	sudo update-rc.d emailip defaults
+	
+Install pip:
+	sudo apt-get install python-pip
+	sudo pip install --upgrade pip //not sure if this is needed or not
+	
+Install pyFirmata
+	pip install pyfirmata
+	
+Load Firmata basic to arduino, install motor shield, etc.
+Run motortest.py
+
+Download mjpg-streamer file: bobtech.ro/tutoriale/raspberr-pi/78-streaming-webcam-in-format-m-jpg-cu-raspberry-pi
+
+sudo apt-get install libv4l-0

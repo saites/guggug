@@ -1,0 +1,21 @@
+##################################################################
+#
+#         .zsh_files/.zsh.aliases file
+#
+#         Read in every time a new interactive zsh is started.
+#         Defines some useful aliases.
+#
+##################################################################
+
+alias RM='rm -f'
+
+alias c='clear'
+alias la="ls -la"
+alias view="vim -R"
+alias l='less'
+alias excellent='echo indeed'
+alias vi="vim"
+
+alias convert_jpg='for f in *ppm ; do convert -quality 100 $f $f"_jpg."jpg; done'
+alias make_movie='mencoder "mf://*.jpg" -mf fps=5 -o output.avi -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=800'
+
