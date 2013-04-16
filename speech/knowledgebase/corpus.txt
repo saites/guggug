@@ -1,0 +1,13 @@
+move forward
+stop
+move backward
+turn around
+turn left
+turn right
+halt
+stay still
+stay
+come
+come here
+follow
+speak
