@@ -52,7 +52,8 @@ main(int argc, char *argv[]) {
 	if(hyp == NULL) {
 		EXIT_ERROR;
 	}
-	printf("Recognized: %s\n", hyp);
+	printf("Recognized: %s; score: %d; uttid: %s\n", 
+			hyp, score, uttid);
 
 	/* clean up */
 	fclose(fh);

@@ -1,9 +1,10 @@
-all: moveforward
+CFLAGS=-DMODELDIR="`pkg-config --variable=modeldir pocketsphinx`" \
+		`pkg-config --cflags --libs pocketsphinx sphinxbase`
+
+all: moveforward 
 
 clean:
-	rm -f moveforward
+	rm -f moveforward moveforward.o
 
-moveforward:
-	gcc -o moveforward moveforward.c \
-		-DMODELDIR=\"`pkg-config --variable=modeldir pocketsphinx`\" \
-		`pkg-config --cflags --libs pocketsphinx sphinxbase`
+moveforward: moveforward.o
+	gcc -o moveforward moveforward.o $(CFLAGS)
