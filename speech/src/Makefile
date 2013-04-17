@@ -1,4 +1,4 @@
-CFLAGS=-DMODELDIR="`pkg-config --variable=modeldir pocketsphinx`" \
+CFLAGS=-DMODELDIR=\"`pkg-config --variable=modeldir pocketsphinx`\" \
 		`pkg-config --cflags --libs pocketsphinx sphinxbase`
 ALL=recognize moveforward
 
