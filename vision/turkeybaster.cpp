@@ -24,15 +24,16 @@ int main() {
 		disjoint_makeset(dj, i);
 	}
 	
+	imwrite("output-original.jpg", frame);
 
 	for(int i = 0; i < frame.rows; i++) {
 		for(int j = 0; j < frame.cols; j++) {
 			for(int k = 0; k < 3; k++) {
 				if(frame(i,j)[k] > 127) {
-					int thispixel = disjoint_find(dj, i*frame.cols + j);
 					if(i > 0) {
 						if(j > 0) {
 							if(frame(i-1, j-1)[0] == 255) {
+					int thispixel = disjoint_find(dj, i*frame.cols + j);
 								int topleft = disjoint_find(dj,
 										(i-1)*frame.cols + (j-1));
 								if(topleft != thispixel) {
@@ -41,6 +42,7 @@ int main() {
 							}
 						}
 						if(frame(i-1, j)[0] == 255) {
+					int thispixel = disjoint_find(dj, i*frame.cols + j);
 							int top = disjoint_find(dj,
 									(i-1)*frame.cols + j);
 							if(top != thispixel) {
@@ -50,6 +52,7 @@ int main() {
 					}
 					if(j > 0) {
 						if(frame(i, j-1)[0] == 255) {
+					int thispixel = disjoint_find(dj, i*frame.cols + j);
 							int left = disjoint_find(dj,
 									i*frame.cols + (j-1));
 							if(left != thispixel) {
@@ -66,6 +69,7 @@ int main() {
 		}
 	}
 
+	imwrite("output-white.jpg", frame);
 
 	map<int, set<int>*> whites;
 	map<int, set<int>*>::iterator it;
@@ -86,15 +90,25 @@ int main() {
 		}
 	}
 
+	int r[3];
+	int g[3];
+	int b[3];
+	r[0] = 0; r[1] = 0; r[2] = 255;
+	g[0] = 0; g[1] = 255; g[2] = 0;
+	b[0] = 255; b[1] = 0; b[2] = 0;
+	int c = 0;
+
 	for(it = whites.begin(); it != whites.end(); it++) {
 		set<int> *pixelset = it->second;
+		c++;
+		c %= 3;
 		for(set<int>::iterator sit = pixelset->begin(); sit != pixelset->end();
 				sit++) {
 			int i = *sit / frame.cols;
-			int j = *sit % frame.rows;
-			frame(i,j)[0] = 0;
-			frame(i,j)[1] = 0;
-			frame(i,j)[2] = 255;
+			int j = *sit % frame.cols;
+			frame(i,j)[0] = b[c];
+			frame(i,j)[1] = g[c];
+			frame(i,j)[2] = r[c];
 		}
 	}
 
