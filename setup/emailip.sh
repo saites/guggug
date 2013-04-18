@@ -13,7 +13,7 @@
 
 case "$1" in
   start)
-	/sbin/ifconfig | /usr/bin/mail -s "Raspberry Pi IP Address" saites2001@gmail.com
+	/sbin/ifconfig | /usr/bin/mail -s "Raspberry Pi IP Address" raspberrypi@defvar.org
 	;;
   stop)
 	;;
