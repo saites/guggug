@@ -11,38 +11,23 @@
 
 #include <wiringPi.h>
 
-#define SHM_SIZE    8
+#define SHM_SIZE    16
 #define SHM_NAME    "/encoder"
 
 long long *mem;
+int shm_fd;
 
-void signal_callback_handler(int) {
+void signal_callback_handler(int);
 
-    /* cleanup */
-    if (munmap(map, FILESIZE) == -1) {
-	perror("Error un-mmapping the file");
-	close(fd);
-	exit(EXIT_FAILURE);
-    }
-
-    close(fd);
-
-    if (shm_unlink(SHM_NAME) >= 0) {
-	perror("Error unlinking");
-	exit(EXIT_FAILURE);
-    }
-
-    exit(EXIT_SUCCESS);
-
-}
-
-void count() {
+void lcount() {
     mem[0]++;
 }
 
-int main(int argc, char* argv[]) {
+void rcount() {
+    mem[1]++;
+}
 
-    int shm_fd;
+int main(int argc, char* argv[]) {
 
     /* register our signal handler */
     signal(SIGINT, signal_callback_handler);
@@ -62,6 +47,7 @@ int main(int argc, char* argv[]) {
 
     /* write 0 to the mem */
     mem[0] = 0;
+    mem[1] = 0;
 
     if (wiringPiSetup() != 0) {
 	perror("wiringPitSetup");
@@ -69,18 +55,41 @@ int main(int argc, char* argv[]) {
     }
 
     pinMode(7, INPUT);
+    pinMode(0, INPUT);
 
     if (piHiPri(90) != 0) {
 	perror("piHiPri");
 	exit(EXIT_FAILURE);
     }
 
-    wiringPiISR(7, INT_EDGE_RISING, count);
+    wiringPiISR(7, INT_EDGE_RISING, lcount);
+    wiringPiISR(0, INT_EDGE_RISING, rcount);
 
     for (;;) {
 	delay(1000);
-	printf("Counter: %lli\n", mem[0]);
+	printf("Counter:\t %lli \t %lli\n", mem[0], mem[1]);
     }
 
     exit(EXIT_SUCCESS);
+}
+
+
+void signal_callback_handler(int signum) {
+
+    /* cleanup */
+    if (munmap(mem, SHM_SIZE) == -1) {
+	perror("Error un-mmapping the file");
+	close(shm_fd);
+	exit(EXIT_FAILURE);
+    }
+
+    close(shm_fd);
+
+    if (shm_unlink(SHM_NAME) != 0) {
+	perror("Error unlinking");
+	exit(EXIT_FAILURE);
+    }
+
+    exit(EXIT_SUCCESS);
+
 }
