@@ -24,7 +24,9 @@ int main() {
 		disjoint_makeset(dj, i);
 	}
 	
+#ifdef __DEBUG__
 	imwrite("output-original.jpg", frame);
+#endif
 
 	//read through the image and join sets of white pixels
 	for(int i = 0; i < frame.rows; i++) {
@@ -71,7 +73,9 @@ int main() {
 		}
 	}
 
+#ifdef __DEBUG__
 	imwrite("output-white.jpg", frame);
+#endif
 
 	//build a map of pixelsets keyed on the dj_set_id, containing a set of all
 	//the pixels in a group
@@ -94,6 +98,7 @@ int main() {
 		}
 	}
 
+#ifdef __DEBUG__
 	//just a handy array for handling coloring
 	int r[3];
 	int g[3];
@@ -102,6 +107,7 @@ int main() {
 	g[0] = 0; g[1] = 255; g[2] = 0;
 	b[0] = 255; b[1] = 0; b[2] = 0;
 	int c = 0;
+#endif
 
 	//make a map of the sets keyed on set size, for handy sorting
 	multimap<int, set<int>*> bySize;
@@ -114,6 +120,8 @@ int main() {
 	//circular. If so, mark them as the leds. Average the x and y coordinates
 	//to find the center point of the leds
 	int i;
+	int X[3];
+	int Y[3];
 	for(mit = bySize.rbegin(), i = 0; i < 3 && mit != bySize.rend(); 
 		mit++, i++) {
 		set<int> *pixelset = mit->second;
@@ -121,13 +129,31 @@ int main() {
 		c %= 3;
 
 		int xsum = 0, ysum = 0;
+		set<int> xset;
+		set<int> yset;
 		for(set<int>::iterator sit = pixelset->begin(); sit != pixelset->end();
 				sit++) {
 			xsum += *sit / frame.cols;
 			ysum += *sit % frame.cols;
-			
+			xset.insert(*sit / frame.cols);
+			yset.insert(*sit % frame.cols);
 		}
 
+		printf("unique xvals: %d; unique yvals: %d\n", xset.size(), 
+				yset.size());
+
+		//if it's a circle, there will be roughly the same number of unique
+		//x and y values; if not, grab the next largest pixel area
+		if(xset.size() > 1.25*yset.size() || 1.25*xset.size() < yset.size()) {
+			i--;
+			continue;
+		}
+
+		int X[i] = xsum / pixelset->size();
+		int Y[i] = ysum / pixelset->size();
+
+#ifdef __DEBUG__
+		//color in the region so we can see it in the output
 		for(set<int>::iterator sit = pixelset->begin(); sit != pixelset->end();
 				sit++) {
 			int i = *sit / frame.cols;
@@ -136,9 +162,14 @@ int main() {
 			frame(i,j)[1] = g[c];
 			frame(i,j)[2] = r[c];
 		}
+#endif
 	}
-
+#ifdef __DEBUG__
 	imwrite("output.jpg", frame);
+#endif
+
+	printf("points at (%d, %d), (%d, %d), (%d, %d)\n", 
+			X[0], Y[0], X[1], Y[1], X[2], Y[2]);
 	
 	return 0;
 }
