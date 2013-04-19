@@ -26,6 +26,7 @@ int main() {
 	
 	imwrite("output-original.jpg", frame);
 
+	//read through the image and join sets of white pixels
 	for(int i = 0; i < frame.rows; i++) {
 		for(int j = 0; j < frame.cols; j++) {
 			for(int k = 0; k < 3; k++) {
@@ -33,7 +34,8 @@ int main() {
 					if(i > 0) {
 						if(j > 0) {
 							if(frame(i-1, j-1)[0] == 255) {
-					int thispixel = disjoint_find(dj, i*frame.cols + j);
+								int thispixel = disjoint_find(dj, 
+										i*frame.cols + j);
 								int topleft = disjoint_find(dj,
 										(i-1)*frame.cols + (j-1));
 								if(topleft != thispixel) {
@@ -42,7 +44,7 @@ int main() {
 							}
 						}
 						if(frame(i-1, j)[0] == 255) {
-					int thispixel = disjoint_find(dj, i*frame.cols + j);
+							int thispixel = disjoint_find(dj, i*frame.cols+ j);
 							int top = disjoint_find(dj,
 									(i-1)*frame.cols + j);
 							if(top != thispixel) {
@@ -52,7 +54,7 @@ int main() {
 					}
 					if(j > 0) {
 						if(frame(i, j-1)[0] == 255) {
-					int thispixel = disjoint_find(dj, i*frame.cols + j);
+							int thispixel = disjoint_find(dj, i*frame.cols+ j);
 							int left = disjoint_find(dj,
 									i*frame.cols + (j-1));
 							if(left != thispixel) {
@@ -71,6 +73,8 @@ int main() {
 
 	imwrite("output-white.jpg", frame);
 
+	//build a map of pixelsets keyed on the dj_set_id, containing a set of all
+	//the pixels in a group
 	map<int, set<int>*> whites;
 	map<int, set<int>*>::iterator it;
 	for(int i = 0; i < frame.rows; i++) {
@@ -90,6 +94,7 @@ int main() {
 		}
 	}
 
+	//just a handy array for handling coloring
 	int r[3];
 	int g[3];
 	int b[3];
@@ -98,18 +103,31 @@ int main() {
 	b[0] = 255; b[1] = 0; b[2] = 0;
 	int c = 0;
 
+	//make a map of the sets keyed on set size, for handy sorting
 	multimap<int, set<int>*> bySize;
 	multimap<int, set<int>*>::reverse_iterator mit;
 	for(it = whites.begin(); it != whites.end(); it++) {
 		bySize.insert(pair<int, set<int>* >(it->second->size(), it->second));
 	}
 
+	//now look at the three biggest sets and make sure that they're roughly
+	//circular. If so, mark them as the leds. Average the x and y coordinates
+	//to find the center point of the leds
 	int i;
 	for(mit = bySize.rbegin(), i = 0; i < 3 && mit != bySize.rend(); 
 		mit++, i++) {
 		set<int> *pixelset = mit->second;
 		c++;
 		c %= 3;
+
+		int xsum = 0, ysum = 0;
+		for(set<int>::iterator sit = pixelset->begin(); sit != pixelset->end();
+				sit++) {
+			xsum += *sit / frame.cols;
+			ysum += *sit % frame.cols;
+			
+		}
+
 		for(set<int>::iterator sit = pixelset->begin(); sit != pixelset->end();
 				sit++) {
 			int i = *sit / frame.cols;
