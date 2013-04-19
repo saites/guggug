@@ -29,7 +29,7 @@ int main() {
 	for(int i = 0; i < frame.rows; i++) {
 		for(int j = 0; j < frame.cols; j++) {
 			for(int k = 0; k < 3; k++) {
-				if(frame(i,j)[k] > 127) {
+				if(frame(i,j)[k] > 200) {
 					if(i > 0) {
 						if(j > 0) {
 							if(frame(i-1, j-1)[0] == 255) {
@@ -98,8 +98,16 @@ int main() {
 	b[0] = 255; b[1] = 0; b[2] = 0;
 	int c = 0;
 
+	multimap<int, set<int>*> bySize;
+	multimap<int, set<int>*>::reverse_iterator mit;
 	for(it = whites.begin(); it != whites.end(); it++) {
-		set<int> *pixelset = it->second;
+		bySize.insert(pair<int, set<int>* >(it->second->size(), it->second));
+	}
+
+	int i;
+	for(mit = bySize.rbegin(), i = 0; i < 3 && mit != bySize.rend(); 
+		mit++, i++) {
+		set<int> *pixelset = mit->second;
 		c++;
 		c %= 3;
 		for(set<int>::iterator sit = pixelset->begin(); sit != pixelset->end();
