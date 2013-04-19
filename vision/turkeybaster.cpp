@@ -125,8 +125,6 @@ int main() {
 	for(mit = bySize.rbegin(), i = 0; i < 3 && mit != bySize.rend(); 
 		mit++, i++) {
 		set<int> *pixelset = mit->second;
-		c++;
-		c %= 3;
 
 		int xsum = 0, ysum = 0;
 		set<int> xset;
@@ -149,10 +147,12 @@ int main() {
 			continue;
 		}
 
-		int X[i] = xsum / pixelset->size();
-		int Y[i] = ysum / pixelset->size();
+		X[i] = xsum / pixelset->size();
+		Y[i] = ysum / pixelset->size();
 
 #ifdef __DEBUG__
+		c++;
+		c %= 3;
 		//color in the region so we can see it in the output
 		for(set<int>::iterator sit = pixelset->begin(); sit != pixelset->end();
 				sit++) {
