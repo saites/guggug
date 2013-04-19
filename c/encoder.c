@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -10,8 +11,30 @@
 
 #include <wiringPi.h>
 
-long long counter = 0;
+#define SHM_SIZE    8
+#define SHM_NAME    "/encoder"
+
 long long *mem;
+
+void signal_callback_handler(int) {
+
+    /* cleanup */
+    if (munmap(map, FILESIZE) == -1) {
+	perror("Error un-mmapping the file");
+	close(fd);
+	exit(EXIT_FAILURE);
+    }
+
+    close(fd);
+
+    if (shm_unlink(SHM_NAME) >= 0) {
+	perror("Error unlinking");
+	exit(EXIT_FAILURE);
+    }
+
+    exit(EXIT_SUCCESS);
+
+}
 
 void count() {
     mem[0]++;
@@ -21,30 +44,33 @@ int main(int argc, char* argv[]) {
 
     int shm_fd;
 
-   /* open shared memory */
-    shm_fd = shm_open("/encoder", O_CREAT | O_RDWR, 0666);
+    /* register our signal handler */
+    signal(SIGINT, signal_callback_handler);
 
-    if (ftruncate(shm_fd, 8)) {
-	perror("Opening shared memory");
+   /* open shared memory */
+    shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
+
+    if (ftruncate(shm_fd, SHM_SIZE) == -1) {
+	perror("Opening shared memory file");
 	exit(EXIT_FAILURE);
     }
 
-    if ((mem = mmap(0, 8, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0)) == MAP_FAILED) {
-	perror("Memory Map");
+    if ((mem = mmap(0, SHM_SIZE, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0)) == MAP_FAILED) {
+	perror("Mapping memory");
 	exit(EXIT_FAILURE);
     }
 
     /* write 0 to the mem */
     mem[0] = 0;
 
-    if (wiringPiSetup()) {
+    if (wiringPiSetup() != 0) {
 	perror("wiringPitSetup");
 	exit(EXIT_FAILURE);
     }
 
     pinMode(7, INPUT);
 
-    if (piHiPri(90)) {
+    if (piHiPri(90) != 0) {
 	perror("piHiPri");
 	exit(EXIT_FAILURE);
     }
