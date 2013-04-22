@@ -13,6 +13,8 @@
 
 #define SHM_SIZE    16
 #define SHM_NAME    "/encoder"
+#define PIN_A       1
+#define PIN_B       4
 
 long long *mem;
 int shm_fd;
@@ -28,6 +30,9 @@ void rcount() {
 }
 
 int main(int argc, char* argv[]) {
+
+    setlinebuf(stdout);
+    long long last_count[2];
 
     /* register our signal handler */
     signal(SIGINT, signal_callback_handler);
@@ -54,20 +59,27 @@ int main(int argc, char* argv[]) {
 	exit(EXIT_FAILURE);
     }
 
-    pinMode(7, INPUT);
-    pinMode(0, INPUT);
+    pinMode(PIN_A, INPUT);
+    pinMode(PIN_B, INPUT);
 
     if (piHiPri(90) != 0) {
 	perror("piHiPri");
 	exit(EXIT_FAILURE);
     }
 
-    wiringPiISR(7, INT_EDGE_RISING, lcount);
-    wiringPiISR(0, INT_EDGE_RISING, rcount);
+    wiringPiISR(PIN_A, INT_EDGE_RISING, lcount);
+    wiringPiISR(PIN_B, INT_EDGE_RISING, rcount);
 
+    last_count[0] = mem[0];
+    last_count[1] = mem[1];
     for (;;) {
 	delay(1000);
-	printf("Counter:\t %lli \t %lli\n", mem[0], mem[1]);
+	if (mem[0] != last_count[0] || mem[1] != last_count[1]) {
+	    last_count[0] = mem[0];
+	    last_count[1] = mem[1];
+	    printf("Counter:\t %lli \t %lli\n", mem[0], mem[1]);
+	}
+
     }
 
     exit(EXIT_SUCCESS);

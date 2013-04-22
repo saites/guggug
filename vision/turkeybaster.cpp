@@ -59,14 +59,18 @@ double distsq(int x1, int y1, int x2, int y2);
 
 int main(int argc, char *argv[]) {
 	struct timespec PAUSE;
-	PAUSE.tv_sec = 0;
-	PAUSE.tv_nsec = 500000000L;
-	float SPEED = .8;
+	PAUSE.tv_nsec = 250000000L;
+	float SPEED = .7;
 	int CENTER_THRESH = 50;
 	int X_THRESH = 5;
 	int SIZE_THRESH_MAX = 3100;
 	int SIZE_THRESH_MIN = 2800;
 	int CAM = 0;
+
+	PAUSE.tv_sec = 10;
+	nanosleep(&PAUSE, NULL);
+
+	PAUSE.tv_sec = 0;
 
 #ifdef __DEBUG__
 	if(argc != 1 && argc != 6) {
@@ -92,8 +96,10 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 	
+#ifdef __DEBUG__
 	const char* windowname = "output";
 	namedWindow(windowname, CV_WINDOW_AUTOSIZE);
+#endif
 
 	DisjointSet *dj = new_disjoint_set(1);
 	map<int, set<int>*> whites;
@@ -271,15 +277,19 @@ int main(int argc, char *argv[]) {
 		if(midP.x > (frame.cols/2)+CENTER_THRESH) {
 			debug_printf("moving right\n");
 			printf("robot.turnRight(%f)\n", SPEED);
+			fflush(stdout);
 			nanosleep(&PAUSE, NULL);
 			printf("robot.stop()\n");
+			fflush(stdout);
 			continue;
 		}
 		else if(midP.x < (frame.cols/2)-CENTER_THRESH) {
 			debug_printf("moving left\n");
 			printf("robot.turnLeft(%f)\n", SPEED);
+			fflush(stdout);
 			nanosleep(&PAUSE, NULL);
 			printf("robot.stop()\n");
+			fflush(stdout);
 			continue;
 		}
 
@@ -302,13 +312,17 @@ int main(int argc, char *argv[]) {
 		if(dist > SIZE_THRESH_MAX) {
 			debug_printf("backing up\n");
 			printf("robot.moveBackward(%f)\n", SPEED);
+			fflush(stdout);
 			nanosleep(&PAUSE, NULL);
 			printf("robot.stop()\n");
+			fflush(stdout);
 			continue;
 		} else if(dist < SIZE_THRESH_MIN) {
 			printf("robot.moveForward(%f)\n", SPEED);
+			fflush(stdout);
 			nanosleep(&PAUSE, NULL);
 			printf("robot.stop()\n");
+			fflush(stdout);
 			continue;
 		}
 
