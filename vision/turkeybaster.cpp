@@ -4,14 +4,15 @@
 #include <set>
 #include <map>
 #include <time.h>
+#include <pthread.h>
 #include "disjoint.h"
 
 #define __DEBUG__
 #ifdef __DEBUG__
   #define debug_printf(...) fprintf(stderr, __VA_ARGS__)
-  //#define debug_imwrite(...) imwrite(__VA_ARGS__)
+  #define debug_imwrite(...) imwrite(__VA_ARGS__)
   //#define debug_imshow(...) imshow(__VA_ARGS__)
-  #define debug_imwrite(...) 
+  //#define debug_imwrite(...) 
   #define debug_imshow(...) 
 #else
   #define debug_printf(...) 
@@ -57,20 +58,46 @@ void orderthree(Point2D a, Point2D b, Point2D c,
 		Point2D &d, Point2D &e, Point2D &f);
 double distsq(int x1, int y1, int x2, int y2);
 
+
+VideoCapture *cap;
+int CAM = 0;
+Mat_<Vec3b> frame;
+Mat_<Vec3b> f;
+
+void *StartVideo(void *argument) {
+	cap = new VideoCapture(CAM);
+	
+	if(!cap->isOpened()) {
+		fprintf(stderr, "something went wrong\n");
+		exit(1);
+	}
+	for(;;) {
+		(*cap) >> f;
+	}
+}
+
+void copyFrame() {
+	frame = f;
+}
+
 int main(int argc, char *argv[]) {
 	struct timespec PAUSE;
-	PAUSE.tv_nsec = 250000000L;
-	float SPEED = .7;
+	struct timespec TURNPAUSE;
+	struct timespec MOVEPAUSE;
+	float TURNSPEED = .6;
+	float MOVESPEED = .85;
 	int CENTER_THRESH = 50;
 	int X_THRESH = 5;
 	int SIZE_THRESH_MAX = 3100;
 	int SIZE_THRESH_MIN = 2800;
-	int CAM = 0;
 
 	PAUSE.tv_sec = 10;
+	PAUSE.tv_nsec = 0;
 	nanosleep(&PAUSE, NULL);
-
-	PAUSE.tv_sec = 0;
+	MOVEPAUSE.tv_nsec = 500000000L;
+	MOVEPAUSE.tv_sec = 0;
+	TURNPAUSE.tv_nsec = 250000000L;
+	TURNPAUSE.tv_sec = 0;
 
 #ifdef __DEBUG__
 	if(argc != 1 && argc != 6) {
@@ -90,11 +117,14 @@ int main(int argc, char *argv[]) {
 		CAM = atoi(argv[5]);
 	}
 
-	VideoCapture cap(CAM);
-	if(!cap.isOpened()) {
-		fprintf(stderr, "something went wrong\n");
+	pthread_t thread;
+	int rc;
+	rc = pthread_create(&thread, NULL, StartVideo, NULL);
+	if(rc != 0) {
+		printf("thread spawn failed\n");
 		exit(1);
 	}
+
 	
 #ifdef __DEBUG__
 	const char* windowname = "output";
@@ -110,8 +140,7 @@ int main(int argc, char *argv[]) {
 	set<int> xset;
 	set<int> yset;
 	while(true) {
-		Mat_<Vec3b> frame;
-		cap >> frame;
+		copyFrame();
 
 		//clear all the used memory
 		for(it = whites.begin(); it != whites.end(); it++) {
@@ -276,18 +305,18 @@ int main(int argc, char *argv[]) {
 		int avgX = (minP.x + maxP.x) / 2;
 		if(midP.x > (frame.cols/2)+CENTER_THRESH) {
 			debug_printf("moving right\n");
-			printf("robot.turnRight(%f)\n", SPEED);
+			printf("robot.turnRight(%f)\n", TURNSPEED);
 			fflush(stdout);
-			nanosleep(&PAUSE, NULL);
+			nanosleep(&TURNPAUSE, NULL);
 			printf("robot.stop()\n");
 			fflush(stdout);
 			continue;
 		}
 		else if(midP.x < (frame.cols/2)-CENTER_THRESH) {
 			debug_printf("moving left\n");
-			printf("robot.turnLeft(%f)\n", SPEED);
+			printf("robot.turnLeft(%f)\n", TURNSPEED);
 			fflush(stdout);
-			nanosleep(&PAUSE, NULL);
+			nanosleep(&TURNPAUSE, NULL);
 			printf("robot.stop()\n");
 			fflush(stdout);
 			continue;
@@ -311,16 +340,16 @@ int main(int argc, char *argv[]) {
 
 		if(dist > SIZE_THRESH_MAX) {
 			debug_printf("backing up\n");
-			printf("robot.moveBackward(%f)\n", SPEED);
+			printf("robot.moveBackward(%f)\n", MOVESPEED);
 			fflush(stdout);
-			nanosleep(&PAUSE, NULL);
+			nanosleep(&MOVEPAUSE, NULL);
 			printf("robot.stop()\n");
 			fflush(stdout);
 			continue;
 		} else if(dist < SIZE_THRESH_MIN) {
-			printf("robot.moveForward(%f)\n", SPEED);
+			printf("robot.moveForward(%f)\n", MOVESPEED);
 			fflush(stdout);
-			nanosleep(&PAUSE, NULL);
+			nanosleep(&MOVEPAUSE, NULL);
 			printf("robot.stop()\n");
 			fflush(stdout);
 			continue;
@@ -328,6 +357,8 @@ int main(int argc, char *argv[]) {
 
 		debug_printf("Perfect!\n");
 	}
+
+	pthread_join(thread, NULL);
 
 	return 0;
 }
