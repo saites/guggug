@@ -3,13 +3,16 @@
 #include <stdio.h>
 #include <set>
 #include <map>
+#include <time.h>
 #include "disjoint.h"
 
 #define __DEBUG__
 #ifdef __DEBUG__
-  #define debug_printf(...) printf(__VA_ARGS__)
-  #define debug_imwrite(...) imwrite(__VA_ARGS__)
-  #define debug_imshow(...) imshow(__VA_ARGS__)
+  #define debug_printf(...) fprintf(stderr, __VA_ARGS__)
+  //#define debug_imwrite(...) imwrite(__VA_ARGS__)
+  //#define debug_imshow(...) imshow(__VA_ARGS__)
+  #define debug_imwrite(...) 
+  #define debug_imshow(...) 
 #else
   #define debug_printf(...) 
   #define debug_imwrite(...) 
@@ -55,6 +58,16 @@ void orderthree(Point2D a, Point2D b, Point2D c,
 double distsq(int x1, int y1, int x2, int y2);
 
 int main(int argc, char *argv[]) {
+	struct timespec PAUSE;
+	PAUSE.tv_sec = 0;
+	PAUSE.tv_nsec = 500000000L;
+	float SPEED = .8;
+	int CENTER_THRESH = 50;
+	int X_THRESH = 5;
+	int SIZE_THRESH_MAX = 3100;
+	int SIZE_THRESH_MIN = 2800;
+	int CAM = 0;
+
 #ifdef __DEBUG__
 	if(argc != 1 && argc != 6) {
 		printf(
@@ -65,11 +78,6 @@ int main(int argc, char *argv[]) {
 #else
 	argc = 1;
 #endif
-	int CENTER_THRESH = 50;
-	int X_THRESH = 5;
-	int SIZE_THRESH_MAX = 3100;
-	int SIZE_THRESH_MIN = 2800;
-	int CAM = 0;
 	if(argc == 6) {
 		CENTER_THRESH = atoi(argv[1]);
 		X_THRESH = atoi(argv[2]);
@@ -189,6 +197,11 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
+		if(whites.size() < 3) {
+			debug_printf("only found %d groups\n", whites.size());
+			continue;
+		}
+
 #ifdef __DEBUG__
 		//just a handy array for handling coloring
 		int r[3];
@@ -257,14 +270,16 @@ int main(int argc, char *argv[]) {
 		int avgX = (minP.x + maxP.x) / 2;
 		if(midP.x > (frame.cols/2)+CENTER_THRESH) {
 			debug_printf("moving right\n");
-			//too far left
-			//move right
+			printf("robot.turnRight(%f)\n", SPEED);
+			nanosleep(&PAUSE, NULL);
+			printf("robot.stop()\n");
 			continue;
 		}
 		else if(midP.x < (frame.cols/2)-CENTER_THRESH) {
 			debug_printf("moving left\n");
-			//too far right
-			//move left
+			printf("robot.turnLeft(%f)\n", SPEED);
+			nanosleep(&PAUSE, NULL);
+			printf("robot.stop()\n");
 			continue;
 		}
 
@@ -286,10 +301,14 @@ int main(int argc, char *argv[]) {
 
 		if(dist > SIZE_THRESH_MAX) {
 			debug_printf("backing up\n");
-			//maxS is too large: need to back up
+			printf("robot.moveBackward(%f)\n", SPEED);
+			nanosleep(&PAUSE, NULL);
+			printf("robot.stop()\n");
 			continue;
 		} else if(dist < SIZE_THRESH_MIN) {
-			//maxS is too small: need to move forward
+			printf("robot.moveForward(%f)\n", SPEED);
+			nanosleep(&PAUSE, NULL);
+			printf("robot.stop()\n");
 			continue;
 		}
 
