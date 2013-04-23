@@ -11,6 +11,16 @@ STOPPED = 0.0
 HIGH = 1.0
 LOW = 0.0
 
+class LED:
+    def __init__(self, pin):
+        self.pin = board.get_pin('d:'+str(pin)+':p')
+
+    def turnOn(self):
+        self.pin.write(HIGH)
+
+    def turnOff(self):
+        self.pin.write(LOW)
+
 class Motor:
 	def __init__(self, motorPin, brakePin, controlPin):
 		self.motorPin = board.get_pin('d:'+str(motorPin)+':o')
@@ -46,7 +56,24 @@ class Robot:
 	def __init__(self):
 		self.motorA = Motor(12, 9, 3)
 		self.motorB = Motor(13, 8, 11)
-		
+		self.greenLED = LED(4)
+		self.redLED = LED(7)
+
+	def turnOnGreen(self):
+		self.greenLED.turnOn()
+    
+	def turnOffGreen(self):
+		self.greenLED.turnOff()
+
+	def turnOnRed(self):
+		self.redLED.turnOn()
+	
+	def turnOnGreen(self):
+		self.redLED.turnOff()
+
+	def setGreen(self, val):
+		self.greenLED.setTo(val)
+
 	def move(self, speed, angle):
 		"""PI/2 = FORWARD"""
 		self.motorA.moveForward(speed * angle/PI)

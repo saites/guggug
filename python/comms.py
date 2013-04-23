@@ -48,6 +48,12 @@ def main_function():
     shm = posix_ipc.SharedMemory("/encoder")
     map_file = mmap.mmap(shm.fd, shm.size)
 
+    # start speech processing
+    aud_cmd = "../speech/src/recognize"
+    aud_process = subprocess.Popen(aud_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    proc_outs[aud_process.stdout.fileno()] = aud_process
+    poller.register(aud_process.stdout, select.EPOLLIN)
+
 	# start video processing
     vid_cmd = "../vision/turkeybaster"
     vid_process = subprocess.Popen(vid_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -73,10 +79,14 @@ def main_function():
         for fd, flags in poller.poll(timeout=1):
             proc = proc_outs[fd]
             string = proc.stdout.readline()
-            if string == "START TRACKING":
+            if string == "START TRACKING\n":
+                print "robot.turnRedOn()\n"
                 ignore_vid = False
-            elif string == "STOP TRACKING":
+				continue;
+            elif string == "STOP TRACKING\n":
+                print "robot.turnRedOff()\n"
                 ignore_vid = True
+				continue;
             if proc is vid_process and ignore_vid:
                 continue;
             print string,
