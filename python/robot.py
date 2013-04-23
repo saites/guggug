@@ -1,6 +1,8 @@
 from pyfirmata import Arduino, util
 
 board = Arduino('/dev/ttyACM0')
+it = util.Iterator(board)
+it.start()
 
 PI = 3.14159
 FORWARD = 1
@@ -10,6 +12,13 @@ HALFSPEED = 0.5
 STOPPED = 0.0
 HIGH = 1.0
 LOW = 0.0
+
+class voltMeter:
+	def __init__(self, pin, R1, R2, ref):
+		self.pin = board.get_pin('a:'+str(pin)+':i')
+		pin.enable_reporting()
+		self.refVoltage = ref
+		vscale = ref * (R1+R2)/R2
 
 class LED:
     def __init__(self, pin):
