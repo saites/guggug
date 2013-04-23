@@ -192,17 +192,12 @@ recognize_from_file() {
 static void
 sleep_msec(int32 ms)
 {
-#if (defined(WIN32) && !defined(GNUWINCE)) || defined(_WIN32_WCE)
-    Sleep(ms);
-#else
-    /* ------------------- Unix ------------------ */
     struct timeval tmo;
 
     tmo.tv_sec = 0;
     tmo.tv_usec = ms * 1000;
 
     select(0, NULL, NULL, NULL, &tmo);
-#endif
 }
 
 /*
@@ -235,6 +230,7 @@ recognize_from_microphone()
 	TURNPAUSE.tv_nsec = 900000000L;
 	MOVEPAUSE.tv_sec = 2;
 	MOVEPAUSE.tv_nsec = 500000000L;
+	int numwords;
 
 	setlinebuf(stdout);
 
@@ -253,7 +249,6 @@ recognize_from_microphone()
     for (;;) {
         /* Indicate listening for next utterance */
         fprintf(stderr, "READY....\n");
-        fflush(stdout);
         fflush(stderr);
 
         /* Wait data for next utterance */
@@ -271,7 +266,6 @@ recognize_from_microphone()
             E_FATAL("Failed to start utterance\n");
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
         fprintf(stderr, "Listening...\n");
-        fflush(stdout);
 
         /* Note timestamp for this first block of data */
         ts = cont->read_ts;
@@ -318,30 +312,31 @@ recognize_from_microphone()
         ps_end_utt(ps);
         hyp = ps_get_hyp(ps, NULL, &uttid);
         fprintf(stderr, "%s: %s\n", uttid, hyp);
-        fflush(stdout);
 
         /* Exit if the first word spoken was GOODBYE */
         if (hyp) {
-			sscanf(hyp, "%s %s %s", word, c1, c2);
+			numwords = sscanf(hyp, "%s %s %s", word, c1, c2);
 			if(strcmp(word, "GUGGUG") == 0) {
 				if(strcmp(c1, "HALT") == 0) {
+					printf("robot.redLED.turnOff()");
 					halted = 1;
 				} else if(strcmp(c1, "RESUME") == 0) {
+					printf("robot.redLED.turnOn()");
 					halted = 0;
 				}
 				if(strcmp(c1, "BEGIN") == 0 || strcmp(c1, "START") == 0) {
-					if(strcmp(c2, "TRACKING") == 0) {
+					if(strcmp(c2, "TRACKING") == 0 && !tracking) {
 						printf("START TRACKING\n");
 						tracking = 1;
 						halted = 0;
 					}
 				} else if(strcmp(c1, "STOP") == 0) {
-					if(strcmp(c2, "TRACKING") == 0) {
+					if(strcmp(c2, "TRACKING") == 0 && tracking) {
 						printf("STOP TRACKING\n");
 						tracking = 0;
 					}
 				} 
-				if(!tracking && !halted) {
+				if(!tracking && !halted && numwords == 3) {
 					if(strcmp(c1, "TURN") == 0) {
 						if(strcmp(c2, "AROUND") == 0) {
 							printf("robot.turnLeft(%f)\n", TURNSPEED);
@@ -392,7 +387,16 @@ int
 main(int argc, char *argv[])
 {
     char const *cfg;
+	int i;
 
+	argc = 7;
+	argv[1] = "-dict";
+	argv[2] = "../../../../../../home/pi/guggug/speech/knowledgebase/3/dictionary";
+	argv[3] = "-lm";
+	argv[4] = "../../../../../../home/pi/guggug/speech/knowledgebase/3/langmodel";
+	argv[5] = "-adcdev";
+	argv[6] = "hw:1,0";
+	
     if (argc == 2) {
         config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
     }
@@ -430,28 +434,3 @@ main(int argc, char *argv[])
     ps_free(ps);
     return 0;
 }
-
-/** Silvio Moioli: Windows CE/Mobile entry point added. */
-#if defined(_WIN32_WCE)
-#pragma comment(linker,"/entry:mainWCRTStartup")
-#include <windows.h>
-
-//Windows Mobile has the Unicode main only
-int wmain(int32 argc, wchar_t *wargv[]) {
-    char** argv;
-    size_t wlen;
-    size_t len;
-    int i;
-
-    argv = malloc(argc*sizeof(char*));
-    for (i=0; i<argc; i++){
-        wlen = lstrlenW(wargv[i]);
-        len = wcstombs(NULL, wargv[i], wlen);
-        argv[i] = malloc(len+1);
-        wcstombs(argv[i], wargv[i], wlen);
-    }
-
-    //assuming ASCII parameters
-    return main(argc, argv);
-}
-#endif

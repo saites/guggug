@@ -60,7 +60,7 @@ double distsq(int x1, int y1, int x2, int y2);
 
 
 VideoCapture *cap;
-int CAM = 0;
+int CAM = 1;
 Mat_<Vec3b> frame;
 Mat_<Vec3b> f;
 
