@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include "disjoint.h"
 
-#define __DEBUG__
+//#define __DEBUG__
 #ifdef __DEBUG__
   #define debug_printf(...) fprintf(stderr, __VA_ARGS__)
   #define debug_imwrite(...) imwrite(__VA_ARGS__)

@@ -226,14 +226,15 @@ recognize_from_microphone()
 	char c1[256], c2[256];
 
 	int tracking = 0;
+	int halted = 0;
 	struct timespec TURNPAUSE;
 	struct timespec MOVEPAUSE;
 	float TURNSPEED = .6;
 	float MOVESPEED = .85;
 	TURNPAUSE.tv_sec = 0;
-	TURNPAUSE.tv_nsec = 750000000L;
-	MOVEPAUSE.tv_sec = 1;
-	MOVEPAUSE.tv_nsec = 0;
+	TURNPAUSE.tv_nsec = 900000000L;
+	MOVEPAUSE.tv_sec = 2;
+	MOVEPAUSE.tv_nsec = 500000000L;
 
 	setlinebuf(stdout);
 
@@ -323,10 +324,16 @@ recognize_from_microphone()
         if (hyp) {
 			sscanf(hyp, "%s %s %s", word, c1, c2);
 			if(strcmp(word, "GUGGUG") == 0) {
+				if(strcmp(c1, "HALT") == 0) {
+					halted = 1;
+				} else if(strcmp(c1, "RESUME") == 0) {
+					halted = 0;
+				}
 				if(strcmp(c1, "BEGIN") == 0 || strcmp(c1, "START") == 0) {
 					if(strcmp(c2, "TRACKING") == 0) {
 						printf("START TRACKING\n");
 						tracking = 1;
+						halted = 0;
 					}
 				} else if(strcmp(c1, "STOP") == 0) {
 					if(strcmp(c2, "TRACKING") == 0) {
@@ -334,7 +341,7 @@ recognize_from_microphone()
 						tracking = 0;
 					}
 				} 
-				if(!tracking) {
+				if(!tracking && !halted) {
 					if(strcmp(c1, "TURN") == 0) {
 						if(strcmp(c2, "AROUND") == 0) {
 							printf("robot.turnLeft(%f)\n", TURNSPEED);

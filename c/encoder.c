@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 	if (mem[0] != last_count[0] || mem[1] != last_count[1]) {
 	    last_count[0] = mem[0];
 	    last_count[1] = mem[1];
-	    printf("Counter:\t %lli \t %lli\n", mem[0], mem[1]);
+	    fprintf(stderr, "Counter:\t %lli \t %lli\n", mem[0], mem[1]);
 	}
 
     }

@@ -48,6 +48,12 @@ def main_function():
     shm = posix_ipc.SharedMemory("/encoder")
     map_file = mmap.mmap(shm.fd, shm.size)
 
+	# start video processing
+    vid_cmd = "../vision/turkeybaster"
+    vid_process = subprocess.Popen(vid_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    proc_outs[vid_process.stdout.fileno()] = vid_process
+    poller.register(vid_process.stdout, select.EPOLLIN)
+
     # signal handling closure
     def signal_callback_handler(signum, frame):
         """ cleanup and exit """
@@ -55,17 +61,25 @@ def main_function():
         shm.close_fd()
 
         enc_process.send_signal(signal.SIGINT)
+        vid_process.send_signal(signal.SIGINT)
         # shm.unlink()
         sys.exit(0)
 
     # register our signal handler
     signal.signal(signal.SIGINT, signal_callback_handler)
 
+    ignore_vid = True
     while True:
         for fd, flags in poller.poll(timeout=1):
             proc = proc_outs[fd]
-            print proc.stdout.readline(),
-
+            string = proc.stdout.readline()
+            if string == "START TRACKING":
+                ignore_vid = False
+            elif string == "STOP TRACKING":
+                ignore_vid = True
+            if proc is vid_process and ignore_vid:
+                continue;
+            print string,
 
 
 if __name__ == '__main__':
