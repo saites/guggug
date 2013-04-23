@@ -31,9 +31,6 @@ void rcount() {
 
 int main(int argc, char* argv[]) {
 
-    setlinebuf(stdout);
-    long long last_count[2];
-
     /* register our signal handler */
     signal(SIGINT, signal_callback_handler);
 
@@ -70,16 +67,8 @@ int main(int argc, char* argv[]) {
     wiringPiISR(PIN_A, INT_EDGE_RISING, lcount);
     wiringPiISR(PIN_B, INT_EDGE_RISING, rcount);
 
-    last_count[0] = mem[0];
-    last_count[1] = mem[1];
     for (;;) {
 	delay(1000);
-	if (mem[0] != last_count[0] || mem[1] != last_count[1]) {
-	    last_count[0] = mem[0];
-	    last_count[1] = mem[1];
-	    fprintf(stderr, "Counter:\t %lli \t %lli\n", mem[0], mem[1]);
-	}
-
     }
 
     exit(EXIT_SUCCESS);
