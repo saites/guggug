@@ -6,7 +6,7 @@ board = Arduino('/dev/ttyACM0')
 it = util.Iterator(board)
 it.start()
 
-PI = 3.14159
+Pi = 3.14159
 FORWARD = 1
 BACKWARD = 0
 FULLSPEED = 1.0
@@ -63,7 +63,7 @@ class Motor:
 		self.motorPin = board.get_pin('d:'+str(motorPin)+':o')
 		self.brakePin = board.get_pin('d:'+str(brakePin)+':o')
 		self.controlPin = board.get_pin('d:'+str(controlPin)+':p')
-		
+
 	def move(self, speed, direction):
 		if(speed < 0):
 			speed *= -1
@@ -78,17 +78,17 @@ class Motor:
 		self.motorPin.write(direction)
 		self.brakePin.write(LOW)
 		self.controlPin.write(speed)
-	
+
 	def moveForward(self, speed):
 		self.move(speed, FORWARD)
-		
+
 	def moveBackward(self, speed):
 		self.move(speed, BACKWARD)
-		
+
 	def stop(self):
 		self.brakePin.write(HIGH)
 		self.controlPin.write(STOPPED)
-		
+
 class Robot:
 	def __init__(self):
 		self.motorA = Motor(12, 9, 3)
@@ -98,13 +98,13 @@ class Robot:
 
 	def turnOnGreen(self):
 		self.greenLED.turnOn()
-    
+
 	def turnOffGreen(self):
 		self.greenLED.turnOff()
 
 	def turnOnRed(self):
 		self.redLED.turnOn()
-	
+
 	def turnOnGreen(self):
 		self.redLED.turnOff()
 
@@ -115,21 +115,21 @@ class Robot:
 		"""PI/2 = FORWARD"""
 		self.motorA.moveForward(speed * angle/PI)
 		self.motorB.moveForward(speed * (-1 * angle + PI)/PI)
-		
+
 	def moveForward(self, speed):
 		self.move(speed, PI/2)
-	
+
 	def moveBackward(self, speed):
 		self.move(-1 * speed, PI/2)
-		
+
 	def stop(self):
 		self.motorA.stop()
 		self.motorB.stop()
-	
+
 	def turnLeft(self, speed):
 		self.motorA.moveForward(speed)
 		self.motorB.moveBackward(speed)
-	
+
 	def turnRight(self, speed):
 		self.motorA.moveBackward(speed)
 		self.motorB.moveForward(speed)
