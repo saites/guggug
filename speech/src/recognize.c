@@ -101,7 +101,7 @@ print_word_times(int32 start)
 		ps_seg_frames (iter, &sf, &ef);
 		pprob = ps_seg_prob (iter, NULL, NULL, NULL);
 		conf = logmath_exp(ps_get_logmath(ps), pprob);
-		printf ("%s %f %f %f\n", ps_seg_word (iter), (sf + start) / 100.0, (ef + start) / 100.0, conf);
+		fprintf (stderr, "%s %f %f %f\n", ps_seg_word (iter), (sf + start) / 100.0, (ef + start) / 100.0, conf);
 		iter = ps_seg_next (iter);
 	}
 }
@@ -179,7 +179,7 @@ recognize_from_file() {
 	    print_word_times(start);
 	} else {
 	    hyp = ps_get_hyp(ps, NULL, &uttid);
-            printf("%s: %s\n", uttid, hyp);
+            fprintf(stderr, "%s: %s\n", uttid, hyp);
         }
         fflush(stdout);	
     }
@@ -225,6 +225,18 @@ recognize_from_microphone()
     char word[256];
 	char c1[256], c2[256];
 
+	int tracking = 0;
+	struct timespec TURNPAUSE;
+	struct timespec MOVEPAUSE;
+	float TURNSPEED = .6;
+	float MOVESPEED = .85;
+	TURNPAUSE.tv_sec = 0;
+	TURNPAUSE.tv_nsec = 750000000L;
+	MOVEPAUSE.tv_sec = 1;
+	MOVEPAUSE.tv_nsec = 0;
+
+	setlinebuf(stdout);
+
     if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
                           (int)cmd_ln_float32_r(config, "-samprate"))) == NULL)
         E_FATAL("Failed to open audio device\n");
@@ -239,7 +251,7 @@ recognize_from_microphone()
 
     for (;;) {
         /* Indicate listening for next utterance */
-        printf("READY....\n");
+        fprintf(stderr, "READY....\n");
         fflush(stdout);
         fflush(stderr);
 
@@ -257,7 +269,7 @@ recognize_from_microphone()
         if (ps_start_utt(ps, NULL) < 0)
             E_FATAL("Failed to start utterance\n");
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-        printf("Listening...\n");
+        fprintf(stderr, "Listening...\n");
         fflush(stdout);
 
         /* Note timestamp for this first block of data */
@@ -299,12 +311,12 @@ recognize_from_microphone()
         while (ad_read(ad, adbuf, 4096) >= 0);
         cont_ad_reset(cont);
 
-        printf("Stopped listening, please wait...\n");
+        fprintf(stderr, "Stopped listening, please wait...\n");
         fflush(stdout);
         /* Finish decoding, obtain and print result */
         ps_end_utt(ps);
         hyp = ps_get_hyp(ps, NULL, &uttid);
-        printf("%s: %s\n", uttid, hyp);
+        fprintf(stderr, "%s: %s\n", uttid, hyp);
         fflush(stdout);
 
         /* Exit if the first word spoken was GOODBYE */
@@ -313,25 +325,41 @@ recognize_from_microphone()
 			if(strcmp(word, "GUGGUG") == 0) {
 				if(strcmp(c1, "BEGIN") == 0 || strcmp(c1, "START") == 0) {
 					if(strcmp(c2, "TRACKING") == 0) {
-						printf("<-- starting tracking -->\n");
+						printf("START TRACKING\n");
+						tracking = 1;
 					}
-				} else if(strcmp(c1, "TURN") == 0) {
-					if(strcmp(c2, "AROUND") == 0) {
-						printf("<-- turning around -->\n");
-					} else if(strcmp(c2, "LEFT") == 0) {
-						printf("<-- turning left -->\n");
-					} else if(strcmp(c2, "RIGHT") == 0) {
-						printf("<-- turning right -->\n");
-					}
-				} else if(strcmp(c1, "MOVE") == 0) {
-					if(strcmp(c2, "FORWARD") == 0) {
-						printf("<-- moving forward -->\n");
-					} else if(strcmp(c2, "BACKWARD") == 0) {
-						printf("<-- moving backward -->\n");
-					}
-				} else if(strcmp(c1, "START") == 0) {
+				} else if(strcmp(c1, "STOP") == 0) {
 					if(strcmp(c2, "TRACKING") == 0) {
-						printf("<-- stopping tracking -->\n");
+						printf("STOP TRACKING\n");
+						tracking = 0;
+					}
+				} 
+				if(!tracking) {
+					if(strcmp(c1, "TURN") == 0) {
+						if(strcmp(c2, "AROUND") == 0) {
+							printf("robot.turnLeft(%f)\n", TURNSPEED);
+							nanosleep(&TURNPAUSE, NULL);
+							nanosleep(&TURNPAUSE, NULL);
+							printf("robot.stop()\n");
+						} else if(strcmp(c2, "LEFT") == 0) {
+							printf("robot.turnLeft(%f)\n", TURNSPEED);
+							nanosleep(&TURNPAUSE, NULL);
+							printf("robot.stop()\n");
+						} else if(strcmp(c2, "RIGHT") == 0) {
+							printf("robot.turnRight(%f)\n", TURNSPEED);
+							nanosleep(&TURNPAUSE, NULL);
+							printf("robot.stop()\n");
+						}
+					} else if(strcmp(c1, "MOVE") == 0) {
+						if(strcmp(c2, "FORWARD") == 0) {
+							printf("robot.moveForward(%f)\n", MOVESPEED);
+							nanosleep(&MOVEPAUSE, NULL);
+							printf("robot.stop()\n");
+						} else if(strcmp(c2, "BACKWARD") == 0) {
+							printf("robot.moveBackward(%f)\n", MOVESPEED);
+							nanosleep(&MOVEPAUSE, NULL);
+							printf("robot.stop()\n");
+						}
 					}
 				}
 			}
