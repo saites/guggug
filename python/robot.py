@@ -1,4 +1,5 @@
 from pyfirmata import Arduino, util
+import threading
 
 board = Arduino('/dev/ttyACM0')
 it = util.Iterator(board)
@@ -13,12 +14,37 @@ STOPPED = 0.0
 HIGH = 1.0
 LOW = 0.0
 
-class voltMeter:
-	def __init__(self, pin, R1, R2, ref):
+class voltMeter(threading.Thread):
+	def __init__(self, pin, R1, R2, ref, numVals, delay):
 		self.pin = board.get_pin('a:'+str(pin)+':i')
 		pin.enable_reporting()
-		self.refVoltage = ref
-		vscale = ref * (R1+R2)/R2
+		l = Lock()
+		self.vscale = ref * (R1+R2)/R2
+		self.vals[0 for i in range(numVals)]
+		self.delay = delay
+		self.daemon = True
+		self.start()
+
+	def run(self):
+		while(1):
+			voltval = self.pin.read()
+			if(voltval is None):
+				continue
+			voltval *= self.vscale
+			l.acquire()
+			self.vals.insert(0, voltval)
+			self.vals.pop()
+			l.release()
+			time.sleep(self.delay)
+
+	def getVoltage():
+		avg = 0.0
+		l.acquire()
+		length = len(self.vals)
+		for n in self.vals:
+			avg += n
+		l.release()
+		return avg / length
 
 class LED:
     def __init__(self, pin):
