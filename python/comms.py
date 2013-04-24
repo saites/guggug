@@ -7,13 +7,8 @@ import shlex
 import select
 import sys
 import os
-import posix_ipc
-import mmap
-import struct
 import time
 
-shm_size = 16
-cm_per_count = 0.030875
 interval = 0.5
 
 def nonBlockRead(output):
@@ -39,22 +34,23 @@ def main_function():
 
     # start the encoder server
     enc_cmd = "../c/encoder"
-    enc_process = subprocess.Popen(enc_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    enc_process = subprocess.Popen(enc_cmd, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     proc_outs[enc_process.stdout.fileno()] = enc_process
     poller.register(enc_process.stdout, select.EPOLLIN)
-    time.sleep(1) # need to wait a sec for encoder server to open file shm
 
-    # open shared memory and map it to mapfile
-    shm = posix_ipc.SharedMemory("/encoder")
-    map_file = mmap.mmap(shm.fd, shm.size)
+    # start the motor server
+    mot_cmd = "./motors.py"
+    mot_process = subprocess.Popen(mot_cmd, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc_outs[mot_process.stdout.fileno()] = mot_process
+    poller.register(mot_process.stdout, select.EPOLLIN)
 
     # start speech processing
     aud_cmd = "../speech/src/recognize"
-    aud_process = subprocess.Popen(aud_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    aud_process = subprocess.Popen(aud_cmd, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     proc_outs[aud_process.stdout.fileno()] = aud_process
     poller.register(aud_process.stdout, select.EPOLLIN)
 
-	# start video processing
+    # start video processing
     vid_cmd = "../vision/turkeybaster"
     vid_process = subprocess.Popen(vid_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     proc_outs[vid_process.stdout.fileno()] = vid_process
@@ -63,33 +59,40 @@ def main_function():
     # signal handling closure
     def signal_callback_handler(signum, frame):
         """ cleanup and exit """
-        map_file.close()
-        shm.close_fd()
-
         enc_process.send_signal(signal.SIGINT)
         vid_process.send_signal(signal.SIGINT)
-        # shm.unlink()
+        mot_process.stdin.write("quit\n")
         sys.exit(0)
 
     # register our signal handler
     signal.signal(signal.SIGINT, signal_callback_handler)
 
     ignore_vid = True
+
     while True:
         for fd, flags in poller.poll(timeout=1):
             proc = proc_outs[fd]
             string = proc.stdout.readline()
-            if string == "START TRACKING\n":
-                print "robot.turnRedOn()\n"
-                ignore_vid = False
-				continue;
-            elif string == "STOP TRACKING\n":
-                print "robot.turnRedOff()\n"
-                ignore_vid = True
-				continue;
+            if len(string) == 0:
+                continue
+            tokens = string.split()
             if proc is vid_process and ignore_vid:
                 continue;
-            print string,
+            if string == "START TRACKING\n":
+                print "TRACKING ON"
+                mot_process.stdin.write("LEDON GREEN\n")
+                ignore_vid = False
+            elif string == "STOP TRACKING\n":
+                print "TRACKING OFF"
+                mot_process.stdin.write("LEDOFF GREEN\n")
+                ignore_vid = True
+            elif tokens[0] == "TURN" or tokens[0] == "TURN" or tokens[0] == "LEDON" or tokens[0] == "LEDOFF":
+                print "MOTOR COMMAND: " + string
+                mot_process.stdin.write(string)
+            else:
+                print "UNRECOGNIZED: " + string
+
+
 
 
 if __name__ == '__main__':

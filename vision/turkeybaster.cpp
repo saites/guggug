@@ -13,9 +13,9 @@
   #define debug_imwrite(...) imwrite(__VA_ARGS__)
   #define debug_imshow(...) imshow(__VA_ARGS__)
 #else
-  #define debug_printf(...) 
-  #define debug_imwrite(...) 
-  #define debug_imshow(...) 
+  #define debug_printf(...)
+  #define debug_imwrite(...)
+  #define debug_imshow(...)
 #endif
 
 using namespace cv;
@@ -40,9 +40,9 @@ class Point2D {
 		int compareY(Point2D &p) {
 			return (this->y - p.y);
 		}
-	
+
 		double distsq(Point2D &p) {
-			return ((double)this->x-p.x)*((double)this->x-p.x) + 
+			return ((double)this->x-p.x)*((double)this->x-p.x) +
 				((double)this->y-p.y)*((double)this->y-p.y);
 		}
 
@@ -52,19 +52,19 @@ class Point2D {
 		}
 };
 
-void orderthree(Point2D a, Point2D b, Point2D c, 
+void orderthree(Point2D a, Point2D b, Point2D c,
 		Point2D &d, Point2D &e, Point2D &f);
 double distsq(int x1, int y1, int x2, int y2);
 
 
 VideoCapture *cap;
-int CAM = 1;
+int CAM = 2;
 Mat_<Vec3b> frame;
 Mat_<Vec3b> f;
 
 void *StartVideo(void *argument) {
 	cap = new VideoCapture(CAM);
-	
+
 	if(!cap->isOpened()) {
 		fprintf(stderr, "something went wrong\n");
 		exit(1);
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	
+
 #ifdef __DEBUG__
 	const char* windowname = "output";
 	namedWindow(windowname, CV_WINDOW_AUTOSIZE);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 		for(int i = 0; i < numPixels; i++) {
 			disjoint_makeset(dj, i);
 		}
-		
+
 		debug_imwrite("output-original.jpg", frame);
 
 		//read through the image and join sets of white pixels
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 						if(i > 0) {
 							if(j > 0) {
 								if(frame(i-1, j-1)[0] == 255) {
-									int thispixel = disjoint_find(dj, 
+									int thispixel = disjoint_find(dj,
 											i*frame.cols + j);
 									int topleft = disjoint_find(dj,
 											(i-1)*frame.cols + (j-1));
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 								}
 							}
 							if(frame(i-1, j)[0] == 255) {
-								int thispixel = disjoint_find(dj, 
+								int thispixel = disjoint_find(dj,
 										i*frame.cols+ j);
 								int top = disjoint_find(dj,
 										(i-1)*frame.cols + j);
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
 						}
 						if(j > 0) {
 							if(frame(i, j-1)[0] == 255) {
-								int thispixel = disjoint_find(dj, 
+								int thispixel = disjoint_find(dj,
 										i*frame.cols+ j);
 								int left = disjoint_find(dj,
 										i*frame.cols + (j-1));
@@ -253,12 +253,12 @@ int main(int argc, char *argv[]) {
 		//to find the center point of the leds
 		int i;
 		Point2D leds[3];
-		for(mit = bySize.rbegin(), i = 0; i < 3 && mit != bySize.rend(); 
+		for(mit = bySize.rbegin(), i = 0; i < 3 && mit != bySize.rend();
 			mit++, i++) {
 			set<int> *pixelset = mit->second;
 
 			int xsum = 0, ysum = 0;
-			for(set<int>::iterator sit = pixelset->begin(); 
+			for(set<int>::iterator sit = pixelset->begin();
 					sit != pixelset->end(); sit++) {
 				xsum += *sit % frame.cols;
 				ysum += *sit / frame.cols;
@@ -287,9 +287,9 @@ int main(int argc, char *argv[]) {
 		char a = (char)cvWaitKey(5);
 		if(a == 27) break;
 
-		debug_printf("points at (%d, %d), (%d, %d), (%d, %d)\n", 
-				leds[0].x, leds[0].y, 
-				leds[1].x, leds[1].y, 
+		debug_printf("points at (%d, %d), (%d, %d), (%d, %d)\n",
+				leds[0].x, leds[0].y,
+				leds[1].x, leds[1].y,
 				leds[2].x, leds[2].y);
 
 		Point2D minP, midP, maxP;
@@ -307,7 +307,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		//centerX should be roughly cenetered between them
-		//if not, the triangle is skew, and the person is not looking at the 
+		//if not, the triangle is skew, and the person is not looking at the
 		//robot
 		if(midP.x > avgX + X_THRESH || midP.x< avgX - X_THRESH) {
 			debug_printf("person not looking at camera: m:%d a:%d\n",
@@ -315,9 +315,9 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		//now we know the dots are centered in the frame and the viewer is 
-		//looking at the robot. Compute the lengths of the segments, get the 
-		//largest segment (which should be the base of the triangle) and try to 
+		//now we know the dots are centered in the frame and the viewer is
+		//looking at the robot. Compute the lengths of the segments, get the
+		//largest segment (which should be the base of the triangle) and try to
 		//make it acertain size
 		double dist = minP.distsq(maxP);
 		debug_printf("max: %lf\n", dist);
