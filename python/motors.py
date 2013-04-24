@@ -174,8 +174,10 @@ def main_function():
         tokens = line[0].readline().split()
         if tokens[0] == 'MOVE':
             gugug.move(int(tokens[1]), float(tokens[2]))
+            sys.stdin.flush()
         elif tokens[0] == 'TURN':
             gugug.turn(int(tokens[1]), float(tokens[2]))
+            sys.stdin.flush()
         elif tokens[0] == 'LEDON':
             gugug.ledOn(tokens[1])
         elif tokens[0] == 'LEDOFF':
