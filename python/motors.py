@@ -177,10 +177,10 @@ def main_function():
         line, out, err = select.select([sys.stdin], [], [])
         tokens = line[0].readline().split()
         if tokens[0] == 'MOVE':
-            gugug.move(tokens[1], tokens[2])
+            gugug.move(int(tokens[1]), float(tokens[2])
             sys.stdin.flush()
         elif tokens[0] == 'TURN':
-            gugug.turn(tokens[1], tokens[2])
+            gugug.turn(int(tokens[1]), float(tokens[2])
             sys.stdin.flush()
         elif tokens[0] == 'LEDON':
             gugug.ledOn(tokens[1])

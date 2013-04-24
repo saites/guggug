@@ -50,19 +50,18 @@ def main_function():
     proc_outs[aud_process.stdout.fileno()] = aud_process
     poller.register(aud_process.stdout, select.EPOLLIN)
 
-	# start video processing
-    #vid_cmd = "../vision/turkeybaster"
-    #vid_process = subprocess.Popen(vid_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    #proc_outs[vid_process.stdout.fileno()] = vid_process
-    #poller.register(vid_process.stdout, select.EPOLLIN)
+    # start video processing
+    vid_cmd = "../vision/turkeybaster"
+    vid_process = subprocess.Popen(vid_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    proc_outs[vid_process.stdout.fileno()] = vid_process
+    poller.register(vid_process.stdout, select.EPOLLIN)
 
     # signal handling closure
     def signal_callback_handler(signum, frame):
         """ cleanup and exit """
         enc_process.send_signal(signal.SIGINT)
-        #vid_process.send_signal(signal.SIGINT)
+        vid_process.send_signal(signal.SIGINT)
         mot_process.stdin.write("quit\n")
-        # shm.unlink()
         sys.exit(0)
 
     # register our signal handler
@@ -77,9 +76,8 @@ def main_function():
             if len(string) == 0:
                 continue
             tokens = string.split()
-
-            #if proc is vid_process and ignore_vid:
-             #   continue;
+            if proc is vid_process and ignore_vid:
+                continue;
             if string == "START TRACKING\n":
                 print "TRACKING ON"
                 mot_process.stdin.write("LEDON GREEN\n")
@@ -89,6 +87,7 @@ def main_function():
                 mot_process.stdin.write("LEDOFF GREEN\n")
                 ignore_vid = True
             elif tokens[0] == "TURN" or tokens[0] == "TURN" or tokens[0] == "LEDON" or tokens[0] == "LEDOFF":
+                print "MOTOR COMMAND: " + string
                 mot_process.stdin.write(string)
             else:
                 print "UNRECOGNIZED: " + string
