@@ -11,9 +11,7 @@
 #ifdef __DEBUG__
   #define debug_printf(...) fprintf(stderr, __VA_ARGS__)
   #define debug_imwrite(...) imwrite(__VA_ARGS__)
-  //#define debug_imshow(...) imshow(__VA_ARGS__)
-  //#define debug_imwrite(...) 
-  #define debug_imshow(...) 
+  #define debug_imshow(...) imshow(__VA_ARGS__)
 #else
   #define debug_printf(...) 
   #define debug_imwrite(...) 
@@ -82,22 +80,14 @@ void copyFrame() {
 
 int main(int argc, char *argv[]) {
 	struct timespec PAUSE;
-	struct timespec TURNPAUSE;
-	struct timespec MOVEPAUSE;
-	float TURNSPEED = .6;
-	float MOVESPEED = .85;
+	int TURN_DEG = 10;
+	int MOVE_CENT = 10; //10 centimeters
 	int CENTER_THRESH = 50;
+	int LEFT = 0;
+	int RIGHT = 1;
 	int X_THRESH = 5;
-	int SIZE_THRESH_MAX = 3100;
-	int SIZE_THRESH_MIN = 2800;
-
-	PAUSE.tv_sec = 10;
-	PAUSE.tv_nsec = 0;
-	nanosleep(&PAUSE, NULL);
-	MOVEPAUSE.tv_nsec = 500000000L;
-	MOVEPAUSE.tv_sec = 0;
-	TURNPAUSE.tv_nsec = 250000000L;
-	TURNPAUSE.tv_sec = 0;
+	int SIZE_THRESH_MAX = 2400;
+	int SIZE_THRESH_MIN = 2100;
 
 #ifdef __DEBUG__
 	if(argc != 1 && argc != 6) {
@@ -305,20 +295,12 @@ int main(int argc, char *argv[]) {
 		int avgX = (minP.x + maxP.x) / 2;
 		if(midP.x > (frame.cols/2)+CENTER_THRESH) {
 			debug_printf("moving right\n");
-			printf("robot.turnRight(%f)\n", TURNSPEED);
-			fflush(stdout);
-			nanosleep(&TURNPAUSE, NULL);
-			printf("robot.stop()\n");
-			fflush(stdout);
+			printf("TURN %d %d\n", RIGHT, TURN_DEG);
 			continue;
 		}
 		else if(midP.x < (frame.cols/2)-CENTER_THRESH) {
 			debug_printf("moving left\n");
-			printf("robot.turnLeft(%f)\n", TURNSPEED);
-			fflush(stdout);
-			nanosleep(&TURNPAUSE, NULL);
-			printf("robot.stop()\n");
-			fflush(stdout);
+			printf("TURN %d %d\n", LEFT, TURN_DEG);
 			continue;
 		}
 
@@ -340,18 +322,10 @@ int main(int argc, char *argv[]) {
 
 		if(dist > SIZE_THRESH_MAX) {
 			debug_printf("backing up\n");
-			printf("robot.moveBackward(%f)\n", MOVESPEED);
-			fflush(stdout);
-			nanosleep(&MOVEPAUSE, NULL);
-			printf("robot.stop()\n");
-			fflush(stdout);
+			printf("MOVE 0 %d\n", MOVE_CENT);
 			continue;
 		} else if(dist < SIZE_THRESH_MIN) {
-			printf("robot.moveForward(%f)\n", MOVESPEED);
-			fflush(stdout);
-			nanosleep(&MOVEPAUSE, NULL);
-			printf("robot.stop()\n");
-			fflush(stdout);
+			printf("MOVE 1 %d\n", MOVE_CENT);
 			continue;
 		}
 

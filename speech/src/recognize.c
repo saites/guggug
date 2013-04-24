@@ -222,14 +222,9 @@ recognize_from_microphone()
 
 	int tracking = 0;
 	int halted = 0;
-	struct timespec TURNPAUSE;
-	struct timespec MOVEPAUSE;
-	float TURNSPEED = .6;
-	float MOVESPEED = .85;
-	TURNPAUSE.tv_sec = 0;
-	TURNPAUSE.tv_nsec = 900000000L;
-	MOVEPAUSE.tv_sec = 2;
-	MOVEPAUSE.tv_nsec = 500000000L;
+	int LEFT = 0;
+	int RIGHT = 1;
+	int MOVE_CENT = 100; //1 meter
 	int numwords;
 
 	setlinebuf(stdout);
@@ -318,10 +313,10 @@ recognize_from_microphone()
 			numwords = sscanf(hyp, "%s %s %s", word, c1, c2);
 			if(strcmp(word, "GUGGUG") == 0) {
 				if(strcmp(c1, "HALT") == 0) {
-					printf("robot.redLED.turnOff()");
+					printf("LEDOFF BLUE");
 					halted = 1;
 				} else if(strcmp(c1, "RESUME") == 0) {
-					printf("robot.redLED.turnOn()");
+					printf("LEDON BLUE");
 					halted = 0;
 				}
 				if(strcmp(c1, "BEGIN") == 0 || strcmp(c1, "START") == 0) {
@@ -339,28 +334,17 @@ recognize_from_microphone()
 				if(!tracking && !halted && numwords == 3) {
 					if(strcmp(c1, "TURN") == 0) {
 						if(strcmp(c2, "AROUND") == 0) {
-							printf("robot.turnLeft(%f)\n", TURNSPEED);
-							nanosleep(&TURNPAUSE, NULL);
-							nanosleep(&TURNPAUSE, NULL);
-							printf("robot.stop()\n");
+							printf("TURN %d 180\n", LEFT);
 						} else if(strcmp(c2, "LEFT") == 0) {
-							printf("robot.turnLeft(%f)\n", TURNSPEED);
-							nanosleep(&TURNPAUSE, NULL);
-							printf("robot.stop()\n");
+							printf("TURN %d 90\n", LEFT);
 						} else if(strcmp(c2, "RIGHT") == 0) {
-							printf("robot.turnRight(%f)\n", TURNSPEED);
-							nanosleep(&TURNPAUSE, NULL);
-							printf("robot.stop()\n");
+							printf("TURN %d 90\n", RIGHT);
 						}
 					} else if(strcmp(c1, "MOVE") == 0) {
 						if(strcmp(c2, "FORWARD") == 0) {
-							printf("robot.moveForward(%f)\n", MOVESPEED);
-							nanosleep(&MOVEPAUSE, NULL);
-							printf("robot.stop()\n");
+							printf("MOVE 0 %d\n", MOVE_CENT);
 						} else if(strcmp(c2, "BACKWARD") == 0) {
-							printf("robot.moveBackward(%f)\n", MOVESPEED);
-							nanosleep(&MOVEPAUSE, NULL);
-							printf("robot.stop()\n");
+							printf("MOVE 1 %d\n", MOVE_CENT);
 						}
 					}
 				}
