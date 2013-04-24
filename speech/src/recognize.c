@@ -241,6 +241,8 @@ recognize_from_microphone()
     if (cont_ad_calib(cont) < 0)
         E_FATAL("Failed to calibrate voice activity detection\n");
 
+
+	printf("LEDON BLUE");
     for (;;) {
         /* Indicate listening for next utterance */
         fprintf(stderr, "READY....\n");

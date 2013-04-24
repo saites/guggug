@@ -89,6 +89,8 @@ int main(int argc, char *argv[]) {
 	int SIZE_THRESH_MAX = 2400;
 	int SIZE_THRESH_MIN = 2100;
 
+	setlinebuf(stdout);
+
 #ifdef __DEBUG__
 	if(argc != 1 && argc != 6) {
 		printf(
