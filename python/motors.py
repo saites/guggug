@@ -5,6 +5,7 @@ import sys
 import mmap
 import struct
 import time
+import select
 from pyfirmata import Arduino, util
 
 FORWARD = 1
@@ -17,6 +18,27 @@ ENCODER_FILE = "/encoder"
 
 
 board = Arduino('/dev/ttyACM0')
+
+class LED:
+    def __init__(self, pin):
+        self.pin = board.get_pin('d:' +str(pin)+ ':o')
+
+    def turnOn(self):
+        self.pin.write(HIGH)
+
+    def turnOff(self):
+        self.pin.write(LOW)
+
+class PWMLED:
+    def __init__(self, pin, on):
+        self.on = on
+        self.pin = board.get_pin('d:' +str(pin)+ ':p')
+
+    def turnOn(self):
+        self.pin.write(self.on)
+
+    def turnOff(self):
+        self.pin.write(0.0)
 
 
 class Motor:
@@ -72,6 +94,17 @@ class Robot:
         self.lMotor = Motor(0, 12, 9, 3)
         self.rMotor = Motor(1, 13, 8, 11)
         self.encoders = Encoders()
+        # 4 5 6 7, 5 6 = PWM
+        self.LEDS = {"BLUE" : PWMLED(5, 0.8),
+                     "GREEN" : PWMLED(6, 0.45),
+                     "RED" : LED(4),
+                     "BLUE" : LED(7)}
+
+    def ledOn(self, which):
+        self.LEDS[which].turnOn()
+
+    def ledOff(self, which):
+        self.LEDS[which].turnOff()
 
     def move(self, direction, distance):
         dist = (distance, distance)
@@ -140,13 +173,21 @@ class Robot:
 def main_function():
     gugug = Robot()
 
-    for line in sys.stdin:
-        tokens = line.split()
-        if tokens[0] == 'move':
+    while True:
+        line, out, err = select.select([sys.stdin], [], [])
+        tokens = line[0].readline().split()
+        if tokens[0] == 'MOVE':
             gugug.move(tokens[1], tokens[2])
-        elif tokens[0] == 'turn':
+            sys.stdin.flush()
+        elif tokens[0] == 'TURN':
             gugug.turn(tokens[1], tokens[2])
+            sys.stdin.flush()
+        elif tokens[0] == 'LEDON':
+            gugug.ledOn(tokens[1])
+        elif tokens[0] == 'LEDOFF':
+            gugug.ledOff(tokens[1])
+        elif tokens[0] == 'QUIT':
+            exit(0)
 
-
-if __name__ = '__main__':
+if __name__ == '__main__':
     main_function()
