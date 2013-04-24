@@ -1,5 +1,6 @@
 from pyfirmata import Arduino, util
 import threading
+import time
 
 board = Arduino('/dev/ttyACM0')
 it = util.Iterator(board)
@@ -16,12 +17,13 @@ LOW = 0.0
 
 class voltMeter(threading.Thread):
 	def __init__(self, pin, R1, R2, ref, numVals, delay):
+		threading.Thread.__init__(self)
 		self.pin = board.get_pin('a:'+str(pin)+':i')
-		pin.enable_reporting()
-		l = Lock()
+		self.pin.enable_reporting()
 		self.vscale = ref * (R1+R2)/R2
-		self.vals[0 for i in range(numVals)]
+		self.vals = [0 for i in range(numVals)]
 		self.delay = delay
+		self.l = threading.Lock()
 		self.daemon = True
 		self.start()
 
@@ -31,19 +33,19 @@ class voltMeter(threading.Thread):
 			if(voltval is None):
 				continue
 			voltval *= self.vscale
-			l.acquire()
+			self.l.acquire()
 			self.vals.insert(0, voltval)
 			self.vals.pop()
-			l.release()
+			self.l.release()
 			time.sleep(self.delay)
 
-	def getVoltage():
+	def getVoltage(self):
 		avg = 0.0
-		l.acquire()
+		self.l.acquire()
 		length = len(self.vals)
 		for n in self.vals:
 			avg += n
-		l.release()
+		self.l.release()
 		return avg / length
 
 class LED:
@@ -91,8 +93,8 @@ class Robot:
 	def __init__(self):
 		self.motorA = Motor(12, 9, 3)
 		self.motorB = Motor(13, 8, 11)
-		self.greenLED = LED(4)
-		self.redLED = LED(7)
+		#self.greenLED = LED(4)
+		#self.redLED = LED(7)
 
 	def turnOnGreen(self):
 		self.greenLED.turnOn()
