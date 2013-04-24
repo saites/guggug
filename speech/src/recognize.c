@@ -8,27 +8,27 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -61,17 +61,17 @@ static const arg_t cont_args_def[] = {
       ARG_STRING,
       NULL,
       "Argument file giving extra arguments." },
-    { "-adcdev", 
-      ARG_STRING, 
-      NULL, 
+    { "-adcdev",
+      ARG_STRING,
+      NULL,
       "Name of audio device to use for input." },
-    { "-infile", 
-      ARG_STRING, 
-      NULL, 
+    { "-infile",
+      ARG_STRING,
+      NULL,
       "Audio file to transcribe." },
-    { "-time", 
-      ARG_BOOLEAN, 
-      "no", 
+    { "-time",
+      ARG_BOOLEAN,
+      "no",
       "Print word times in file transcription." },
     CMDLN_EMPTY_OPTION
 };
@@ -84,9 +84,9 @@ static int32
 ad_file_read(ad_rec_t * ad, int16 * buf, int32 max)
 {
     size_t nread;
-    
+
     nread = fread(buf, sizeof(int16), max, rawfd);
-    
+
     return (nread > 0 ? nread : -1);
 }
 
@@ -97,7 +97,7 @@ print_word_times(int32 start)
 	while (iter != NULL) {
 		int32 sf, ef, pprob;
 		float conf;
-		
+
 		ps_seg_frames (iter, &sf, &ef);
 		pprob = ps_seg_prob (iter, NULL, NULL, NULL);
 		conf = logmath_exp(ps_get_logmath(ps), pprob);
@@ -120,10 +120,10 @@ recognize_from_file() {
 
     char waveheader[44];
     if ((rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
-	E_FATAL_SYSTEM("Failed to open file '%s' for reading", 
+	E_FATAL_SYSTEM("Failed to open file '%s' for reading",
 			cmd_ln_str_r(config, "-infile"));
     }
-    
+
     fread(waveheader, 1, 44, rawfd);
 
     file_ad.sps = (int32)cmd_ln_float32_r(config, "-samprate");
@@ -139,7 +139,7 @@ recognize_from_file() {
     for (;;) {
 
 	while ((k = cont_ad_read(cont, adbuf, 4096)) == 0);
-	
+
         if (k < 0) {
     	    break;
     	}
@@ -148,10 +148,10 @@ recognize_from_file() {
             E_FATAL("ps_start_utt() failed\n");
 
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-        
+
         ts = cont->read_ts;
         start = ((ts - k) * 100.0) / file_ad.sps;
-        
+
         for (;;) {
             if ((k = cont_ad_read(cont, adbuf, 4096)) < 0)
             	break;
@@ -174,14 +174,14 @@ recognize_from_file() {
         }
 
         ps_end_utt(ps);
-        
+
         if (cmd_ln_boolean_r(config, "-time")) {
 	    print_word_times(start);
 	} else {
 	    hyp = ps_get_hyp(ps, NULL, &uttid);
             fprintf(stderr, "%s: %s\n", uttid, hyp);
         }
-        fflush(stdout);	
+        fflush(stdout);
     }
 
     cont_ad_close(cont);
@@ -242,7 +242,7 @@ recognize_from_microphone()
         E_FATAL("Failed to calibrate voice activity detection\n");
 
 
-	printf("LEDON BLUE");
+	printf("LEDON BLUE\n");
     for (;;) {
         /* Indicate listening for next utterance */
         fprintf(stderr, "READY....\n");
@@ -315,10 +315,10 @@ recognize_from_microphone()
 			numwords = sscanf(hyp, "%s %s %s", word, c1, c2);
 			if(strcmp(word, "GUGGUG") == 0) {
 				if(strcmp(c1, "HALT") == 0) {
-					printf("LEDOFF BLUE");
+					printf("LEDOFF BLUE\n");
 					halted = 1;
 				} else if(strcmp(c1, "RESUME") == 0) {
-					printf("LEDON BLUE");
+					printf("LEDON BLUE\n");
 					halted = 0;
 				}
 				if(strcmp(c1, "BEGIN") == 0 || strcmp(c1, "START") == 0) {
@@ -332,7 +332,7 @@ recognize_from_microphone()
 						printf("STOP TRACKING\n");
 						tracking = 0;
 					}
-				} 
+				}
 				if(!tracking && !halted && numwords == 3) {
 					if(strcmp(c1, "TURN") == 0) {
 						if(strcmp(c2, "AROUND") == 0) {
@@ -382,7 +382,7 @@ main(int argc, char *argv[])
 	argv[4] = "../../../../../../home/pi/guggug/speech/knowledgebase/3/langmodel";
 	argv[5] = "-adcdev";
 	argv[6] = "hw:1,0";
-	
+
     if (argc == 2) {
         config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
     }

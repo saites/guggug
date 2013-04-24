@@ -10,6 +10,8 @@ from pyfirmata import Arduino, util
 
 FORWARD = 1
 BACKWARD = 0
+HIGH = 1
+LOW = 1
 SHM_SIZE = 16
 CM_PER_COUNT = 0.031
 DEGREES_PER_CM = 0.47
@@ -98,7 +100,7 @@ class Robot:
         self.LEDS = {"BLUE" : PWMLED(5, 0.8),
                      "GREEN" : PWMLED(6, 0.45),
                      "RED" : LED(4),
-                     "BLUE" : LED(7)}
+                     "YELLOW" : LED(7)}
 
     def ledOn(self, which):
         self.LEDS[which].turnOn()
@@ -117,12 +119,10 @@ class Robot:
         self.lMotor.run()
         self.rMotor.run()
 
-        ticks = 0
         self.lMotor.speed(1.0)
         self.rMotor.speed(1.0)
         while dist[0] >= 0 or dist[1] >= 0:
             time.sleep(0.004)
-            ticks += 1
             delta = self.encoders.getDelta()
             if direction == 0:
                 delta = (delta[0] * TURN_CORRECTION, delta[1])
@@ -144,7 +144,6 @@ class Robot:
                     self.rMotor.speed(0.0)
         self.lMotor.stop()
         self.rMotor.stop()
-        print self.encoders.getData()
 
     def turn(self, direction, degrees):
         degrees *= DEGREES_PER_CM
@@ -159,16 +158,13 @@ class Robot:
         self.lMotor.run()
         self.rMotor.run()
 
-        ticks = 0
         self.lMotor.speed(1.0)
         self.rMotor.speed(1.0)
         while dist[0] >= 0 or dist[1] >= 0:
             time.sleep(0.002)
-            ticks += 1
             dist = tuple([l - r for l, r in zip(dist, self.encoders.getDelta())])
         self.lMotor.stop()
         self.rMotor.stop()
-        print self.encoders.getData()
 
 def main_function():
     gugug = Robot()
@@ -177,17 +173,19 @@ def main_function():
         line, out, err = select.select([sys.stdin], [], [])
         tokens = line[0].readline().split()
         if tokens[0] == 'MOVE':
-            gugug.move(int(tokens[1]), float(tokens[2])
-            sys.stdin.flush()
+            gugug.move(int(tokens[1]), float(tokens[2]))
         elif tokens[0] == 'TURN':
-            gugug.turn(int(tokens[1]), float(tokens[2])
-            sys.stdin.flush()
+            gugug.turn(int(tokens[1]), float(tokens[2]))
         elif tokens[0] == 'LEDON':
             gugug.ledOn(tokens[1])
         elif tokens[0] == 'LEDOFF':
             gugug.ledOff(tokens[1])
         elif tokens[0] == 'QUIT':
             exit(0)
+        else:
+            continue
+
+
 
 if __name__ == '__main__':
     main_function()

@@ -60,7 +60,8 @@ def main_function():
     def signal_callback_handler(signum, frame):
         """ cleanup and exit """
         enc_process.send_signal(signal.SIGINT)
-        vid_process.send_signal(signal.SIGINT)
+        vid_process.send_signal(signal.SIGKILL)
+        aud_process.send_signal(signal.SIGKILL)
         mot_process.stdin.write("quit\n")
         sys.exit(0)
 
@@ -78,15 +79,15 @@ def main_function():
             tokens = string.split()
             if proc is vid_process and ignore_vid:
                 continue;
-            if string == "START TRACKING\n":
+            if string.strip() == "START TRACKING":
                 print "TRACKING ON"
                 mot_process.stdin.write("LEDON GREEN\n")
                 ignore_vid = False
-            elif string == "STOP TRACKING\n":
+            elif string.strip() == "STOP TRACKING":
                 print "TRACKING OFF"
                 mot_process.stdin.write("LEDOFF GREEN\n")
                 ignore_vid = True
-            elif tokens[0] == "TURN" or tokens[0] == "TURN" or tokens[0] == "LEDON" or tokens[0] == "LEDOFF":
+            elif tokens[0] == "MOVE" or tokens[0] == "TURN" or tokens[0] == "LEDON" or tokens[0] == "LEDOFF":
                 print "MOTOR COMMAND: " + string
                 mot_process.stdin.write(string)
             else:
